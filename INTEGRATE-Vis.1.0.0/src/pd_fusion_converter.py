@@ -45,6 +45,7 @@ cohort_name=''
 reference=''
 gene_model = ''
 is_rm_tmp=True
+annotate_bedpes=True
 
 def setDefault():
     global output_dir
@@ -67,8 +68,9 @@ def initialSetupFile():
 
 def getParameters(argv):
     try:
-        opts, args = getopt.getopt(argv,"hks:f:o:c:r:g:a:",["help",
+        opts, args = getopt.getopt(argv,"hkns:f:o:c:r:g:a:",["help",
                                                             "keep-tmp",
+                                                            "no-annot",
                                                             "sample-list=",
                                                             "file-list=",
                                                             "output-dir=",
@@ -101,6 +103,9 @@ def getParameters(argv):
         elif opt in ("-k","--keep-tmp"):
             global is_rm_tmp
             is_rm_tmp = False
+        elif opt in ("-n","--no-annot"):
+            global annotate_bedpes
+            annotate_bedpes = False
         elif opt in ("-r", "--reference"):
             global reference
             reference = arg
@@ -134,13 +139,15 @@ def make_annot_one(sample_name, fusion_bedpe):
     if os.path.exists(bedpeAnnot):
         return
 
-    print "    Annotating fusion bedpe file for ",sample_name,"..."
-    di_file=cur+'/difile.txt'
-    cmd = cur+"/"+"fusionBedpeAnnotator"+" --reference-file "+reference+" --gene-annotation-file "+genePred_file+" --di-file "+di_file \
-    +" --input-file "+fusion_bedpe+" --output-file "+bedpeAnnot
-    p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-    output = p.stdout.read()
-    #print output
+    if annotate_bedpes:
+        print "    Annotating fusion bedpe file for ",sample_name,"..."
+        di_file=cur+'/difile.txt'
+        cmd = cur+"/"+"fusionBedpeAnnotator"+" --reference-file "+reference+" --gene-annotation-file "+genePred_file+" --di-file "+di_file \
+              +" --input-file "+fusion_bedpe+" --output-file "+bedpeAnnot
+        p = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
+                  close_fds=True)
+        output = p.stdout.read()
+        #print output
 
     if not os.path.exists(bedpeAnnot):
         cmd = 'touch '+ bedpeAnnot
@@ -252,19 +259,30 @@ def gen_col17_2(fusionAnnot):
     #print output
     return new_col17
 
-def get_gene_ids(fusionAnnot):
-    tmp=fusionAnnot[16].split(";")
-    tmp2=tmp[0].split("|")[0]
-    t5=tmp2.split("(")[0]
-    t3=''
-    if tmp[1]!='':
-        t3=tmp[1].split("|")[0]
-    else:
-        t3=tmp[2].split("|")[0]
-    if t5 in trans_gene_dict and t3 in trans_gene_dict:
-        return trans_gene_dict[t5],trans_gene_dict[t3]
-    else:
-        return '',''    
+def get_gene_ids(fusionAnnot): #Rewritten, MJI 18/08/08
+    tmp = fusionAnnot[6].split('>>')
+    t5_name = tmp[0]
+    t3_name = tmp[1]
+    tmp=fusionAnnot[16].split(';')
+    t5_trans = tmp[0].split('|')
+    t5 = ''
+    for trans in t5_trans:
+        trans = trans.split('(')[0]
+        if trans in trans_gene_dict:
+            t5 = trans_gene_dict[trans]
+            if gene_name_dict[t5]==t5_name:
+                break
+
+    t3_trans = tmp[1].split('|')
+    t3 = ''
+    for trans in t3_trans:
+        trans = trans.split('(')[0]
+        if trans in trans_gene_dict:
+            t3 = trans_gene_dict[trans]
+            if gene_name_dict[t3]==t3_name:
+                break
+
+    return t5,t3
 
 def get_gene_ids_2(fusionAnnot):
     fusionAnnot[16]=gen_col17_2(fusionAnnot)
@@ -377,16 +395,18 @@ def get_fusion_matrix():
                tmp=line.split("\t")
                all_fusions.append(tmp)
         f.close()
-        sample_name=s_list[i]#global to use older code with it as global
+        sample_name=s_list[i] #global to use older code with it as global
         for x in range(len(all_fusions)):
-           id1,id2='',''
-           if all_fusions[x][16]!="NA":
-               id1,id2=get_gene_ids(all_fusions[x])
-           else:
-               id1,id2=get_gene_ids_2(all_fusions[x])
-           if id1!='' and id2!='':
-               id_sample_has_fusion_dict[id1+"__"+id2+"__"+s_list[i]] = 1
-               id_pairs[id1+"__"+id2] = 1
+            id1,id2='',''
+            if all_fusions[x][16]!="NA":
+                id1,id2=get_gene_ids(all_fusions[x])
+            else:
+                id1,id2=get_gene_ids_2(all_fusions[x])
+
+            if id1!='' and id2!='':
+                id_sample_has_fusion_dict[id1+"__"+id2+"__"+s_list[i]] = 1
+                id_pairs[id1+"__"+id2] = 1
+        
         print "    Sample:",s_list[i],"took\t", ("%0.2f" % (time.time()-t2)), "seconds"
     t2=time.time()
     print "  --Creating fusion matrix...",

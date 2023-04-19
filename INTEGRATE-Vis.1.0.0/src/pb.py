@@ -240,7 +240,13 @@ class PANEL_B:
     def find_best_transcript(self, gene_ID, strand, side):
         description = subprocess.check_output("grep %s %s | awk '$3 == \"transcript\"' | cut -f4,5,9" % (gene_ID, self.gene_model_dir_2), shell = True).rstrip('\n').split('\n')
         description[:] = [transcript.split('\t') for transcript in description]
-        description = [[transcript[0], transcript[1], dict([info.replace('"', '').split(' ') for info in transcript[2].rstrip(';').split('; ')])] for transcript in description]
+        try:
+            description = [[transcript[0], transcript[1], dict([[s.replace('"','').strip() for s in info.strip().split('"', 1)] for info in transcript[2].rstrip(';').split(';')])] for transcript in description]
+        except Exception as e:
+            print(description)
+            raise e
+
+        # description = [[transcript[0], transcript[1], dict([info.replace('"', '').split(' ') for info in transcript[2].rstrip(';').split('; ')])] for transcript in description]
 
         TR_ID_list = [transcript[2]['transcript_id'] for transcript in description]
 
@@ -284,7 +290,11 @@ class PANEL_B:
         # chr number, start, end, exon number
         exon_list = subprocess.check_output("grep %s %s | awk '$3 == \"exon\"' | cut -f1,4,5,9" % (TR_ID, self.gene_model_dir_2), shell = True).rstrip("\n").split("\n")
         exon_list[:] = [exon.split('\t') for exon in exon_list]
-        exon_list = [[exon[0], exon[1], exon[2], dict([info.replace('"', '').split(' ') for info in exon[3].rstrip(';').split('; ')])] for exon in exon_list]
+        try:
+            exon_list = [[exon[0], exon[1], exon[2], dict([[s.replace('"','').strip() for s in info.strip().split('"', 1)] for info in exon[3].rstrip(';').split(';')])] for exon in exon_list]
+        except Exception as e:
+            print(exon_list)
+            raise e
         exon_list[:] = [(exon[0], int(exon[1]), int(exon[2]), exon[3]['exon_number']) for exon in exon_list]
         exon_list.sort(key = lambda x: x[1])
 

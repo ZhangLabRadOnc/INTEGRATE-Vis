@@ -258,6 +258,9 @@ def get_gene_ids(fusionAnnot):
         t3=tmp[1].split("|")[0]
     else:
         t3=tmp[2].split("|")[0]
+    print('t5: {} t3: {}'.format(t5,t3))
+    if t5 not in trans_gene_dict:
+        print(trans_gene_dict)
     return trans_gene_dict[t5],trans_gene_dict[t3]
 
 def get_gene_ids_2(fusionAnnot):

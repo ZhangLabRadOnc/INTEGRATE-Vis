@@ -16,7 +16,7 @@ oncogene_max_exp = 0
 partner_max_exp = 0
 x_coor = 1.2
 offset = 1.5
-bar_height = 1
+bar_height = 1.5 #this value is unchanged
 bar_width = 0.1
 font_size = 10.5
 
@@ -100,20 +100,21 @@ class sample:
         if value_b>maxb:
             value_b = maxb
 
+        #Edited by MJI, 2018/07
         oncogene_bar = patches.Rectangle(
-            (x_coor, 0.5 + 1.3 * bar_width), bar_width, bar_height * (value_a/maxa),
+            (x_coor, 0.5), bar_width, bar_height * (value_a/maxa),
             facecolor= "#cb181d", ec = "none"
         )
         oncogene_base = patches.Rectangle(
-            (x_coor - bar_width*0.15, 0.5 - bar_width*y_factor) , bar_width*1.3, bar_width*y_factor,
+            (x_coor - bar_width*0.15, 0.5 - y_factor) , bar_width*1.3, y_factor,
             facecolor= color, ec = "none"
         )
         partner_bar = patches.Rectangle(
-            (x_coor, 0.5 + 1.3 * bar_width + offset), bar_width, bar_height * (value_b/maxb),
+            (x_coor, 0.5 + offset), bar_width, bar_height * (value_b/maxb),
             facecolor= "blue", ec = "none"
         )
         partner_base = patches.Rectangle(
-            (x_coor - bar_width*0.15, 0.5 + offset - bar_width*y_factor), bar_width*1.3, bar_width*y_factor,
+            (x_coor - bar_width*0.15, 0.5 + offset - y_factor), bar_width*1.3, y_factor,
             facecolor= color, ec = "none"
         )
 
@@ -199,10 +200,9 @@ def visualize(pd_matrix_dir, five_prime_name, three_prime_name, sort_mode, outpu
     global font_size
     # read in data
     with open(pd_matrix_dir) as input_file: # add more binary cols indicating kinase (y/n) oncogene (y/n) ...
-        next(input_file)
         for line in input_file:
             #print(line)
-            tmp = line.split("\t")
+            tmp = line.split('\t')
             name = tmp[0]
             tumor = bool(int(tmp[1]))
             fusion = bool(int(tmp[2]))
@@ -213,7 +213,7 @@ def visualize(pd_matrix_dir, five_prime_name, three_prime_name, sort_mode, outpu
     #calculate y_factor
     tt=len(sample_list)+0.0
     global y_factor
-    y_factor=tt*tt/100000.0+tt/50.0+1
+    y_factor = bar_height/10.0
     #print "###########  y_factor=",y_factor
 
     # sort the expression
@@ -230,7 +230,6 @@ def visualize(pd_matrix_dir, five_prime_name, three_prime_name, sort_mode, outpu
         for x in range(len(sample_list)):
             print ("%s\t%s\t%s\t%s\t%s" % (sample_list[x].name, str(sample_list[x].tumor), str(sample_list[x].fusion), str(sample_list[x].five_prime_exp), str(sample_list[x].three_prime_exp)))
 
-    bar_height = 1.5
     bar_width = 4.0/len(sample_list)
     #print("bar_width")
     #print(bar_width)
@@ -263,6 +262,7 @@ def visualize(pd_matrix_dir, five_prime_name, three_prime_name, sort_mode, outpu
         maxa=oncogene_max_exp
         maxb=partner_max_exp
 
+    #Edited, MJI 2018/07
     plt.text(1.0,  0.5+bar_height*1.0, str(maxa), fontsize = font_size*0.75, verticalalignment ='bottom', horizontalalignment='right', color = 'red')
     plt.text(1.1,  0.5+bar_height*1.0, "_", fontsize = font_size, verticalalignment ='bottom', color = 'red')
     plt.text(1.0,  0.5, "0", fontsize = font_size*0.75, verticalalignment ='bottom', horizontalalignment='right', color = 'red')
@@ -274,22 +274,22 @@ def visualize(pd_matrix_dir, five_prime_name, three_prime_name, sort_mode, outpu
     plt.text(1.1,  0.5+offset, "_", fontsize = font_size, verticalalignment ='bottom',color = 'red')
 
     # legends
-    plt.text(-0.2, 1.0 - bar_width*y_factor, exp_text, fontsize = font_size, horizontalalignment = 'left')
-    plt.text(-0.2, 1.0 - bar_width*y_factor + offset, exp_text, fontsize = font_size, horizontalalignment = 'left')
-    plt.text(-0.2, 0.5 - bar_width*y_factor, "Type", fontsize = font_size, horizontalalignment = 'left')
-    plt.text(-0.2, 0.5 - bar_width*y_factor + offset, "Type", fontsize = font_size, horizontalalignment = 'left')
+    plt.text(-0.2, 1.0 - y_factor, exp_text, fontsize = font_size, horizontalalignment = 'left')
+    plt.text(-0.2, 1.0 - y_factor + offset, exp_text, fontsize = font_size, horizontalalignment = 'left')
+    plt.text(-0.2, 0.5 - y_factor, "Type", fontsize = font_size, horizontalalignment = 'left')
+    plt.text(-0.2, 0.5 - y_factor + offset, "Type", fontsize = font_size, horizontalalignment = 'left')
     plt.text(xlim/2+0.6, 0.625 + bar_height * 1.1, three_prime_name + get_suffix(three_prime_name), horizontalalignment = 'center', fontsize = font_size)
     plt.text(xlim/2+0.6, 0.625 + bar_height * 1.1 + offset, five_prime_name+get_suffix(five_prime_name), horizontalalignment = 'center', fontsize = font_size)
 
     #y_factor*1.0 means on x axis
     legend_x_coor = xlim/2 + 0.8 - 1.3
-    plt.text(legend_x_coor - 1 + bar_width*y_factor*1.0, 0, "Normal", fontsize = font_size)
+    plt.text(legend_x_coor - 1 + 0.15, 0, "Normal", fontsize = font_size*.8)
     #legend need to change
-    color_legend1 = patches.Rectangle((legend_x_coor - 1, 0), bar_width*y_factor*0.5, bar_width*y_factor*1.2, facecolor= "#006d2c", ec = "none")
-    plt.text(legend_x_coor + bar_width*y_factor*1.0, 0, "Tumor without Fusion", fontsize = font_size)
-    color_legend2 = patches.Rectangle((legend_x_coor, 0), bar_width*y_factor*0.5, bar_width*y_factor*1.2, facecolor= "#ae017e", ec = "none")
-    plt.text(legend_x_coor + 2 + bar_width*y_factor*1.0, 0, "Tumor with Fusion", fontsize = font_size)
-    color_legend3 = patches.Rectangle((legend_x_coor + 2, 0), bar_width*y_factor*0.5, bar_width*y_factor*1.2, facecolor= "#252525", ec = "none")
+    color_legend1 = patches.Rectangle((legend_x_coor - 1, 0), 0.1, y_factor*1.2, facecolor= "#006d2c", ec = "none")
+    plt.text(legend_x_coor + 0.15, 0, "Tumor without Fusion", fontsize = font_size*.8)
+    color_legend2 = patches.Rectangle((legend_x_coor, 0), 0.1, y_factor*1.2, facecolor= "#ae017e", ec = "none")
+    plt.text(legend_x_coor + 2 + 0.15, 0, "Tumor with Fusion", fontsize = font_size*.8)
+    color_legend3 = patches.Rectangle((legend_x_coor + 2, 0), 0.1, y_factor*1.2, facecolor= "#252525", ec = "none")
     color_legends = [color_legend1, color_legend2, color_legend3]
     for p in color_legends:
         ax.add_patch(p)

@@ -206,7 +206,11 @@ class PANEL_C:
         #description = subprocess.check_output("grep %s %s | awk '$3 == \"transcript\"' | cut -f4,5,9" % (gene_ID, self.gene_model_directory), shell = True).rstrip('\n').split('\n')
         description = subprocess.check_output("grep %s %s | awk '$3 == \"transcript\"' | cut -f4,5,9" % (gene_ID, self.gene_model_dir_2), shell = True).rstrip('\n').split('\n')
         description[:] = [transcript.split('\t') for transcript in description]
-        description = [[transcript[0], transcript[1], dict([info.replace('"', '').split(' ') for info in transcript[2].rstrip(';').split('; ')])] for transcript in description]
+        try:
+            description = [[transcript[0], transcript[1], dict([[s.replace('"','').strip() for s in info.strip().split('"', 1)] for info in transcript[2].rstrip(';').split(';')])] for transcript in description]
+        except Exception as e:
+            print(description)
+            raise e
 
         TR_ID_list = [transcript[2]['transcript_id'] for transcript in description]
 
@@ -249,8 +253,6 @@ class PANEL_C:
         return TR_list[0][0]
 
     def ID_to_name(self, gene_ID):
-        #description = subprocess.check_output("grep %s %s |  awk '$3 == \"gene\"' | cut -f9" % (gene_ID, self.gene_model_directory), shell = True).rstrip('\n').split('; ')
-        #print gene_ID,self.gene_model_dir_2
         description = subprocess.check_output("grep %s %s |  awk '$3 == \"gene\"' | cut -f9" % (gene_ID, self.gene_model_dir_2), shell = True).rstrip('\n').split('; ')
         description[:] = [x.split(' ') for x in description]
         return next(x for x in description if x[0] == 'gene_name')[1][1:-1]
@@ -296,8 +298,8 @@ class PANEL_C:
         # if not os.isfile("%s.bam" % (gene_name_5)):
         subprocess.call("samtools view -b %s %s:%s-%s > %s.bam" % (self.bam_file_directory, self.ch_5, self.start_5, self.end_5, self.gene_name_5), shell = True)
 
-        self.reads_3 = subprocess.check_output("bedtools genomecov -ibam %s.bam -bga" % (self.gene_name_3), shell = True)
-        self.reads_5 = subprocess.check_output("bedtools genomecov -ibam %s.bam -bga" % (self.gene_name_5), shell = True)
+        self.reads_3 = subprocess.check_output("bedtools genomecov -ibam %s.bam -bga | awk -v chr=%s '$1==chr'" % (self.gene_name_3, self.ch_3), shell = True)
+        self.reads_5 = subprocess.check_output("bedtools genomecov -ibam %s.bam -bga | awk -v chr=%s '$1==chr'" % (self.gene_name_5, self.ch_5), shell = True)
 
         if self.reads_3: self.reads_3 = [read.split("\t") for read in self.reads_3.rstrip('\n').split('\n')]
         if self.reads_5: self.reads_5 = [read.split("\t") for read in self.reads_5.rstrip('\n').split('\n')]
@@ -310,7 +312,7 @@ class PANEL_C:
             for read in self.reads_3:
                 count_start = max(self.start_3, int(read[1]))
                 count_end = min(self.end_3, int(read[2]))
-                count = int(read[3])
+                count = int(float(read[3]))
                 for i in range(count_start - self.start_3, count_end - self.start_3 + 1):
                     self.read_coords_3[i] = count
 
@@ -318,9 +320,10 @@ class PANEL_C:
             for read in self.reads_5:
                 count_start = max(self.start_5, int(read[1]))
                 count_end = min(self.end_5, int(read[2]))
-                count = int(read[3])
+                count = int(float(read[3]))
                 for i in range(count_start - self.start_5, count_end - self.start_5 + 1):
                     self.read_coords_5[i] = count
+
 
     def get_graph_coords(self):
         if self.coverage_mode == 'g': # make sure to highlight exons, optionally, shrink length of intron (not important for now)

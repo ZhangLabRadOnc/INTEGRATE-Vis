@@ -87,7 +87,7 @@ def getParameters(argv):
             three_prime_ID = arg
         elif opt in ("-s", "--sort_mode"):
             global sort_mode
-            sorGt_mode = int(arg)
+            sort_mode = int(arg)
         elif opt in ("-o", "--output-dir"):
             global outputDir
             outputDir = arg
@@ -210,7 +210,7 @@ def main(argv):
 
     #
     exp_dict_5 = {}
-    five_prime_exp_line = subprocess.check_output("grep %s %s" % (five_prime_ID, exp_table), shell = True).rstrip('\n')
+    five_prime_exp_line = subprocess.check_output("grep -m 1 %s %s" % (five_prime_ID, exp_table), shell = True).rstrip('\n') #Edited, MJI 18/08/08
     five_prime_exp_line = five_prime_exp_line.split("\t")
     five_prime_exp_line.pop(0)
     sample_list = subprocess.check_output("head -1 %s" % (exp_table), shell = True)
@@ -220,7 +220,7 @@ def main(argv):
         exp_dict_5[sample_list[x]]=five_prime_exp_line[x]
 
     exp_dict_3 = {}
-    three_prime_exp_line = subprocess.check_output("grep %s %s" % (three_prime_ID, exp_table), shell = True).rstrip('\n')
+    three_prime_exp_line = subprocess.check_output("grep -m 1 %s %s" % (three_prime_ID, exp_table), shell = True).rstrip('\n') #Edited
     three_prime_exp_line=three_prime_exp_line.split("\t")
     three_prime_exp_line.pop(0)
     for x in range(len(sample_list)):

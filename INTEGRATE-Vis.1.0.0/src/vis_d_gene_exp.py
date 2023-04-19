@@ -150,16 +150,12 @@ def plot_one(id1,id2,fusion_name):
     #create file for a gene
     t=time.time()
     f=open(type_file,"r")
-    line=f.readline()
+    #Edited by MJI, 2018/07/03 - fix bug that skips first line of type file, rewrote file reading for clarity
     tmp_dic = {}
-    while True:
-        line=f.readline()
-        if line=="":
-            break
-        else:
-           tmp=line.split("\t")
-           if int(tmp[1])==1:
-               tmp_dic[tmp[0]]=1
+    for line in f:
+        line = line.split('\t')
+        if int(line[1])==1:
+            tmp_dic[line[0]]=1
     f.close()
     global type_list
     type_list=[]
@@ -174,7 +170,7 @@ def plot_one(id1,id2,fusion_name):
     for x in range(len(sample_list)):
         f2.write("%s\t%s\t%s\n" % (sample_list[x],type_list[x],fusion_list[x]))
     f2.close()
-    #run pd.py
+    #run pd.py # -w to print per-sample expression values to output
     cmd = 'python '+cur+'/pd.py -f '+pd_file+' -e '+exp_mat_file+' -5 '+id1+' -3 '+id2+' -s 0 -g '+gene_model+' -y '+y_mode+' -r '+str(max_value)+' -t "'+exp_text+'" -o '+output_dir+"/"+cohort_name+"."+fusion_name+".cohort.pdf"
     print "Command:    ",cmd
     p = Popen(cmd, cwd=output_dir, shell=True, stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
